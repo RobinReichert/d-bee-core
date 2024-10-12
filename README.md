@@ -6,4 +6,5 @@
         - DB_USER
         - DB_PASSWORD
         - DB_NAME
+
     2. run ./build.sh
