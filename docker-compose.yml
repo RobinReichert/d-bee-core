@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16
+    container_name: dbee-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d
+    networks:
+      - dbee-network
+
+  api:
+    image: dbee:latest
+    container_name: dbee-api
+    ports:
+      - "443:443"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=disable
+      - DB_HOST=host.docker.internal
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    networks:
+      - dbee-network
+    depends_on:
+      - db
+
+volumes:
+  db-data:
+
+networks:
+  dbee-network:
