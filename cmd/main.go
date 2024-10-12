@@ -1,7 +1,10 @@
 package main
 
-import dbee "github.com/RobinReichert/d-bee-lib"
+import (
+	"github.com/RobinReichert/d-bee-core/internal"
+)
 
 func main() {
-	dbee.Test()
+	database := internal.Database()
+	env := internal.Env(database)
 }
