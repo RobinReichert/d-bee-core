@@ -5,6 +5,8 @@ import (
 )
 
 func main() {
-	database := internal.Database()
-	env := internal.Env(database)
+	database := internal.PostgresDatabase()
+	env := internal.Env(&database)
+	router := internal.Router(env)
+	internal.Server(router)
 }

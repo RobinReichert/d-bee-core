@@ -1,9 +1,13 @@
 package internal
 
 type env struct {
-	database dbConnection
+	database Database
 }
 
-func Env(database dbConnection) env {
+func Env(database Database) env {
 	return env{database: database}
+}
+
+func (t *env) Database() Database {
+	return t.database
 }

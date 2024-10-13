@@ -14,9 +14,30 @@ services:
     networks:
       - dbee-network
 
-  api:
-    image: dbee:latest
-    container_name: dbee-api
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile.build
+    container_name: dbee-app
+    ports:
+      - "443:443"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=disable
+      - DB_HOST=host.docker.internal
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    networks:
+      - dbee-network
+    depends_on:
+      - db
+
+  test:
+    build:
+      context: .
+      dockerfile: dockerfile.test
+    container_name: dbee-test
     ports:
       - "443:443"
     environment:
