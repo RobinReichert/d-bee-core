@@ -35,7 +35,7 @@ func QueryHandler(env *env) *queryHandler {
 func (t *queryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query, args, err := decodePayload(r)
 	if err != nil {
-		ErrorHandler("bad request", "invalid json body", http.StatusBadRequest).ServeHTTP(w, r)
+		ErrorHandler("bad request", err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	result, err := t.env.database.Query(query, args)
