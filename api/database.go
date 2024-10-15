@@ -39,12 +39,12 @@ func (t *connection) Query(query string, args ...any) (map[string]any, error) {
 	case http.StatusOK:
 		return responseBody, nil
 	case http.StatusBadRequest:
-		if msg, ok := responseBody["message"].(string); ok {
+		if msg, ok := responseBody["Message"].(string); ok {
 			return nil, errors.New(msg)
 		}
-		return nil, fmt.Errorf("bad request")
+		return nil, fmt.Errorf("not ok bad request")
 	case http.StatusInternalServerError:
-		if msg, ok := responseBody["message"].(string); ok {
+		if msg, ok := responseBody["Message"].(string); ok {
 			return nil, errors.New(msg)
 		}
 		return nil, fmt.Errorf("internal server error")
