@@ -17,10 +17,10 @@ services:
   app:
     build:
       context: .
-      dockerfile: dockerfile.build
+      dockerfile: cmd/dockerfile.build
     container_name: dbee-app
     ports:
-      - "443:443"
+      - "80:80"
     environment:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
@@ -36,7 +36,7 @@ services:
   test:
     build:
       context: .
-      dockerfile: dockerfile.test
+      dockerfile: test/dockerfile.test
     container_name: dbee-test
     ports:
       - "443:443"

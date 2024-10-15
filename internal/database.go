@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
 type Database interface {
 	Exec(query string, args ...any) error
 	Query(query string, args ...any) ([]map[string]any, error)
-	QueryRow(query string, args ...any) (map[string]any, error)
 }
 
 type postgresDatabase struct {
@@ -47,34 +46,24 @@ func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, e
 		return nil, fmt.Errorf("failed to query data: %w", err)
 	}
 	defer rows.Close()
-	columns, err := rows.Columns()
+	columnNames, err := rows.Columns()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get column names: %w", err)
+		return nil, fmt.Errorf("failed to get column types: %w", err)
 	}
 	result := []map[string]any{}
 	for rows.Next() {
 		row := make(map[string]any)
 
-		values := make([]any, len(columns))
-		valuePtrs := make([]any, len(columns))
-		for i := range columns {
+		values := make([]any, len(columnNames))
+		valuePtrs := make([]any, len(columnNames))
+		for i := range columnNames {
 			valuePtrs[i] = &values[i]
 		}
 		if err := rows.Scan(valuePtrs...); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-		for i, col := range columns {
-			switch value := values[i].(type) {
-			case []byte:
-				var arr []string
-				if err := pq.Array(&arr).Scan(value); err != nil {
-					row[col] = string(value)
-				} else {
-					row[col] = arr
-				}
-			default:
-				row[col] = value
-			}
+		for i, col := range columnNames {
+			row[col] = values[i]
 		}
 		result = append(result, row)
 	}
@@ -82,10 +71,6 @@ func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, e
 		return nil, fmt.Errorf("failed to iterate over rows: %w", err)
 	}
 	return result, nil
-}
-
-func (t *postgresDatabase) QueryRow(query string, args ...any) (map[string]any, error) {
-	return nil, nil
 }
 
 type mockDatabase struct {
@@ -100,9 +85,5 @@ func (t *mockDatabase) Exec(query string, args ...any) error {
 }
 
 func (t *mockDatabase) Query(query string, args ...any) ([]map[string]any, error) {
-	return nil, nil
-}
-
-func (t *mockDatabase) QueryRow(query string, args ...any) (map[string]any, error) {
 	return nil, nil
 }

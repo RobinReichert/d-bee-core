@@ -11,6 +11,9 @@ type router struct {
 func Router(env env) router {
 	mux := http.NewServeMux()
 	router := router{mux: mux}
-	return router
 
+	mux.Handle("/query", QueryHandler(&env))
+	mux.Handle("/exec", ExecHandler(&env))
+
+	return router
 }
