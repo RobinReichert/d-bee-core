@@ -74,11 +74,6 @@ func (t *execHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{})
 }
 
-type apiError struct {
-	Error   string
-	Message string
-}
-
 type errorHandler struct {
 	Error   string
 	Message string
@@ -92,6 +87,10 @@ func ErrorHandler(err string, message string, code int) *errorHandler {
 func (t *errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(t.Code)
-	json.NewEncoder(w).Encode(apiError{Error: t.Error, Message: t.Message})
+	json.NewEncoder(w).Encode([]map[string]any{{
+		"error":   t.Error,
+		"message": t.Message,
+		"coed":    t.Code},
+	})
 
 }
