@@ -16,7 +16,7 @@ func ConnectToDBEE(baseUrl string) connection {
 	return connection{baseUrl: baseUrl}
 }
 
-func (t *connection) Query(query string, args ...any) (map[string]any, error) {
+func (t *connection) Query(query string, args ...any) ([]map[string]any, error) {
 	requestBody := map[string]any{
 		"query": query,
 		"args":  args,
@@ -30,7 +30,7 @@ func (t *connection) Query(query string, args ...any) (map[string]any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to post query: %w", err)
 	}
-	var responseBody map[string]any
+	var responseBody []map[string]any
 	err = json.NewDecoder(response.Body).Decode(&responseBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode response body: %w", err)
@@ -39,12 +39,12 @@ func (t *connection) Query(query string, args ...any) (map[string]any, error) {
 	case http.StatusOK:
 		return responseBody, nil
 	case http.StatusBadRequest:
-		if msg, ok := responseBody["Message"].(string); ok {
+		if msg, ok := responseBody[0]["Message"].(string); ok {
 			return nil, errors.New(msg)
 		}
 		return nil, fmt.Errorf("not ok bad request")
 	case http.StatusInternalServerError:
-		if msg, ok := responseBody["Message"].(string); ok {
+		if msg, ok := responseBody[0]["Message"].(string); ok {
 			return nil, errors.New(msg)
 		}
 		return nil, fmt.Errorf("internal server error")

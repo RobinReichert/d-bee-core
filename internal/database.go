@@ -41,9 +41,6 @@ func (t *postgresDatabase) Exec(query string, args ...any) error {
 }
 
 func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, error) {
-	for _, arg := range args {
-		fmt.Println(arg)
-	}
 	rows, err := t.connection.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query data: %w", err)
