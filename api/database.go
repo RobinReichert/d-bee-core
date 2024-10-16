@@ -5,8 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 )
+
+func newBodyReader(query string, args ...any) (io.Reader, error) {
+	requestBody := map[string]any{
+		"query": query,
+		"args":  args,
+	}
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+	return bytes.NewReader(jsonData), nil
+}
 
 type connection struct {
 	baseUrl string
@@ -17,37 +30,53 @@ func ConnectToDBEE(baseUrl string) connection {
 }
 
 func (t *connection) Query(query string, args ...any) ([]map[string]any, error) {
-	requestBody := map[string]any{
-		"query": query,
-		"args":  args,
-	}
-	jsonData, err := json.Marshal(requestBody)
+	bodyReader, err := newBodyReader(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, fmt.Errorf("failed to create body reader: %w", err)
 	}
-
-	response, err := http.Post(t.baseUrl+"query", "application/json", bytes.NewReader(jsonData))
+	response, err := http.Post(t.baseUrl+"/query", "application/json", bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to post query: %w", err)
 	}
-	var responseBody []map[string]any
-	err = json.NewDecoder(response.Body).Decode(&responseBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode response body: %w", err)
-	}
-	switch response.StatusCode {
-	case http.StatusOK:
+	if response.StatusCode == http.StatusOK {
+		var responseBody []map[string]any
+		err = json.NewDecoder(response.Body).Decode(&responseBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode response body: %w", err)
+		}
 		return responseBody, nil
-	case http.StatusBadRequest:
-		if msg, ok := responseBody[0]["message"].(string); ok {
-			return nil, errors.New(msg)
+	} else {
+		var errorBody map[string]any
+		err = json.NewDecoder(response.Body).Decode(&errorBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode error: %w", err)
 		}
-		return nil, fmt.Errorf("internal error")
-	case http.StatusInternalServerError:
-		if msg, ok := responseBody[0]["message"].(string); ok {
+		if msg, ok := errorBody["message"].(string); ok {
 			return nil, errors.New(msg)
 		}
 		return nil, fmt.Errorf("internal error")
 	}
-	return nil, fmt.Errorf("unexpected status code")
+}
+
+func (t *connection) Exec(query string, args ...any) error {
+	bodyReader, err := newBodyReader(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to create body reader: %w", err)
+	}
+	response, err := http.Post(t.baseUrl+"/exec", "application/json", bodyReader)
+	if err != nil {
+		return fmt.Errorf("failed to post query: %w", err)
+	}
+	if response.StatusCode != http.StatusOK {
+		var errorBody map[string]any
+		err = json.NewDecoder(response.Body).Decode(&errorBody)
+		if err != nil {
+			return fmt.Errorf("failed to decode error: %w", err)
+		}
+		if msg, ok := errorBody["message"].(string); ok {
+			return errors.New(msg)
+		}
+		return errors.New("error wrong format")
+	}
+	return nil
 }

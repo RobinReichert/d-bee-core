@@ -61,9 +61,8 @@ func ExecHandler(env *env) *execHandler {
 
 func (t *execHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query, args, err := decodePayload(r)
-	r.Body.Close()
 	if err != nil {
-		ErrorHandler("bad request", "invalid json body", http.StatusBadRequest).ServeHTTP(w, r)
+		ErrorHandler("bad request", err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	err = t.env.database.Exec(query, args)
@@ -87,10 +86,10 @@ func ErrorHandler(err string, message string, code int) *errorHandler {
 func (t *errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(t.Code)
-	json.NewEncoder(w).Encode([]map[string]any{{
+	json.NewEncoder(w).Encode(map[string]any{
 		"error":   t.Error,
 		"message": t.Message,
 		"coed":    t.Code},
-	})
+	)
 
 }
