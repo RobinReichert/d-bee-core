@@ -3,6 +3,7 @@ package internal
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/lib/pq"
@@ -36,11 +37,12 @@ func PostgresDatabase() postgresDatabase {
 }
 
 func (t *postgresDatabase) Exec(query string, args ...any) error {
-	_, err := t.connection.Exec(query, args...)
+	_, err := t.connection.Exec(query, args)
 	return fmt.Errorf("failed to query without result %w", err)
 }
 
 func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, error) {
+	log.Println(args...)
 	rows, err := t.connection.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query data: %w", err)

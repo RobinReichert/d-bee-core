@@ -19,7 +19,7 @@ func decodePayload(r *http.Request) (string, []any, error) {
 	}
 	args, ok := payload["args"].([]any)
 	if !ok {
-		return "", nil, fmt.Errorf("invalid json body: no args")
+		args = nil
 	}
 	return query, args, nil
 }
@@ -38,9 +38,9 @@ func (t *queryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler("bad request", err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
-	result, err := t.env.database.Query(query, args)
+	result, err := t.env.database.Query(query, args...)
 	if err != nil {
-		ErrorHandler("bad request", "failed to query data", http.StatusBadRequest).ServeHTTP(w, r)
+		ErrorHandler("bad request", "failed to query data: "+err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	responseBody, err := json.Marshal(result)
