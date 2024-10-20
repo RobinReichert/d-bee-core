@@ -17,3 +17,10 @@ func Router(env env) router {
 
 	return router
 }
+
+func (t *router) Serve() {
+	err := http.ListenAndServe(":80", t.mux)
+	if err != nil {
+		panic(err)
+	}
+}

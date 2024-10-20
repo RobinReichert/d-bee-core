@@ -17,10 +17,10 @@ services:
   app:
     build:
       context: .
-      dockerfile: cmd/dockerfile.build
+      dockerfile: docker/dockerfile.build
     container_name: dbee-app
     ports:
-      - "80:80"
+      - "8081:80"
     environment:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
@@ -29,6 +29,7 @@ services:
       - DB_HOST=host.docker.internal
     extra_hosts: ["host.docker.internal:host-gateway"]
     networks:
+      - shared-network
       - dbee-network
     depends_on:
       - db
@@ -36,10 +37,10 @@ services:
   test:
     build:
       context: .
-      dockerfile: test/dockerfile.test
+      dockerfile: docker/dockerfile.test
     container_name: dbee-test
     ports:
-      - "443:443"
+      - "8083:80"
     environment:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
@@ -48,6 +49,7 @@ services:
       - DB_HOST=host.docker.internal
     extra_hosts: ["host.docker.internal:host-gateway"]
     networks:
+      - shared-network
       - dbee-network
     depends_on:
       - db
@@ -57,3 +59,5 @@ volumes:
 
 networks:
   dbee-network:
+  shared-network:
+    external: true

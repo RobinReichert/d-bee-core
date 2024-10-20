@@ -65,9 +65,9 @@ func (t *execHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler("bad request", err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
-	err = t.env.database.Exec(query, args)
+	err = t.env.database.Exec(query, args...)
 	if err != nil {
-		ErrorHandler("bad request", "failed to query data", http.StatusBadRequest).ServeHTTP(w, r)
+		ErrorHandler("bad request", "failed to query data: "+err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	w.Write([]byte{})

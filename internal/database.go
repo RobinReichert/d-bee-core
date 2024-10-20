@@ -36,8 +36,11 @@ func PostgresDatabase() postgresDatabase {
 }
 
 func (t *postgresDatabase) Exec(query string, args ...any) error {
-	_, err := t.connection.Exec(query, args)
-	return fmt.Errorf("failed to query without result %w", err)
+	_, err := t.connection.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to query without result %w", err)
+	}
+	return nil
 }
 
 func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, error) {

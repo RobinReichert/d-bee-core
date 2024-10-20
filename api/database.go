@@ -21,11 +21,16 @@ func newBodyReader(query string, args ...any) (io.Reader, error) {
 	return bytes.NewReader(jsonData), nil
 }
 
+type Connection interface {
+	Query(query string, args ...any) ([]map[string]any, error)
+	Exec(query string, args ...any) error
+}
+
 type connection struct {
 	baseUrl string
 }
 
-func ConnectToDBEE(baseUrl string) connection {
+func Connect(baseUrl string) connection {
 	return connection{baseUrl: baseUrl}
 }
 
