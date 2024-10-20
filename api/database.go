@@ -52,10 +52,10 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 		}
 		return responseBody, nil
 	} else {
+		log.Println(response.Body)
 		var errorBody map[string]any
 		err = json.NewDecoder(response.Body).Decode(&errorBody)
 		if err != nil {
-			log.Println(err)
 			return nil, fmt.Errorf("failed to decode error: %w", err)
 		}
 		if msg, ok := errorBody["message"].(string); ok {
@@ -78,7 +78,6 @@ func (t *connection) Exec(query string, args ...any) error {
 		var errorBody map[string]any
 		err = json.NewDecoder(response.Body).Decode(&errorBody)
 		if err != nil {
-			log.Println(err)
 			return fmt.Errorf("failed to decode error: %w", err)
 		}
 		if msg, ok := errorBody["message"].(string); ok {
