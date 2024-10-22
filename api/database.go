@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 func newBodyReader(query string, args ...any) (io.Reader, error) {
@@ -28,10 +29,13 @@ type Connection interface {
 
 type connection struct {
 	baseUrl string
+	client  *http.Client
 }
 
 func Connect(baseUrl string) *connection {
-	return &connection{baseUrl: baseUrl}
+	return &connection{baseUrl: baseUrl, client: &http.Client{
+		Timeout: 10 * time.Second,
+	}}
 }
 
 func (t *connection) Query(query string, args ...any) ([]map[string]any, error) {
@@ -39,11 +43,17 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create body reader: %w", err)
 	}
-	response, err := http.Post(t.baseUrl+"/query", "application/json", bodyReader)
+	request, err := http.NewRequest("POST", t.baseUrl+"/query", bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to post query: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	response, err := t.client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed post request: %w", err)
 	}
 	defer response.Body.Close()
+	fmt.Println(response.StatusCode)
+	fmt.Println(response.Body)
 	if response.StatusCode == http.StatusOK {
 		var responseBody []map[string]any
 		err = json.NewDecoder(response.Body).Decode(&responseBody)
