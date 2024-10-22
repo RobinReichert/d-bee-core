@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -35,16 +36,19 @@ func QueryHandler(env *env) *queryHandler {
 func (t *queryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query, args, err := decodePayload(r)
 	if err != nil {
+		fmt.Println(err)
 		ErrorHandler("bad request", err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	result, err := t.env.database.Query(query, args...)
 	if err != nil {
+		fmt.Println(err)
 		ErrorHandler("bad request", "failed to query data: "+err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	responseBody, err := json.Marshal(result)
 	if err != nil {
+		fmt.Println(err)
 		ErrorHandler("internal server error", "failed encoding response body", http.StatusInternalServerError).ServeHTTP(w, r)
 		return
 	}
@@ -86,10 +90,11 @@ func ErrorHandler(err string, message string, code int) *errorHandler {
 func (t *errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(t.Code)
+	log.Println(t.Error)
 	json.NewEncoder(w).Encode(map[string]any{
 		"error":   t.Error,
 		"message": t.Message,
-		"coed":    t.Code},
+		"code":    t.Code},
 	)
 
 }

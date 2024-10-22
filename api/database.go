@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -44,6 +43,7 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to post query: %w", err)
 	}
+	defer response.Body.Close()
 	if response.StatusCode == http.StatusOK {
 		var responseBody []map[string]any
 		err = json.NewDecoder(response.Body).Decode(&responseBody)
@@ -52,7 +52,6 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 		}
 		return responseBody, nil
 	} else {
-		log.Println(response.Body)
 		var errorBody map[string]any
 		err = json.NewDecoder(response.Body).Decode(&errorBody)
 		if err != nil {
