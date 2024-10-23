@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/lib/pq"
@@ -29,10 +30,12 @@ func PostgresDatabase() postgresDatabase {
 	if err != nil {
 		panic(err)
 	}
+	log.Println("successfull connected to postgres dabtabase")
 	err = connection.Ping()
 	if err != nil {
 		panic(err)
 	}
+	log.Println("received ping from db")
 	return postgresDatabase{connection: connection}
 }
 

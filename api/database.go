@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -31,6 +32,7 @@ type connection struct {
 }
 
 func Connect(baseUrl string) *connection {
+	log.Println("connecting to d-bee api")
 	return &connection{baseUrl: baseUrl}
 }
 
@@ -45,7 +47,11 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 	}
 	defer response.Body.Close()
 	if response.Header.Get("Content-Type") != "application/json" {
-		return nil, errors.New("unexpected response format")
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read body with wrong content type: %w", err)
+		}
+		return nil, errors.New("unexpected response format, message: " + string(body))
 	}
 	if response.StatusCode == http.StatusOK {
 		var responseBody []map[string]any
