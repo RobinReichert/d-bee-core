@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"time"
 )
 
 func newBodyReader(query string, args ...any) (io.Reader, error) {
@@ -30,13 +28,10 @@ type Connection interface {
 
 type connection struct {
 	baseUrl string
-	client  *http.Client
 }
 
 func Connect(baseUrl string) *connection {
-	return &connection{baseUrl: baseUrl, client: &http.Client{
-		Timeout: 10 * time.Second,
-	}}
+	return &connection{baseUrl: baseUrl}
 }
 
 func (t *connection) Query(query string, args ...any) ([]map[string]any, error) {
@@ -44,39 +39,31 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create body reader: %w", err)
 	}
-	request, err := http.NewRequest("POST", t.baseUrl+"/query", bodyReader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	response, err := t.client.Do(request)
+	response, err := http.Post(t.baseUrl+"/query", "application/json", bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed post request: %w", err)
 	}
 	defer response.Body.Close()
-	fmt.Println(response.StatusCode)
-	bodyBytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Fatalf("Failed to read response body: %v", err)
+	if response.Header.Get("Content-Type") != "application/json" {
+		return nil, errors.New("unexpected response format")
 	}
-	message := string(bodyBytes)
-	fmt.Println(message)
 	if response.StatusCode == http.StatusOK {
 		var responseBody []map[string]any
-		err = json.Unmarshal(bodyBytes, &responseBody)
+		err = json.NewDecoder(response.Body).Decode(&responseBody)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode response body: %w", err)
 		}
 		return responseBody, nil
 	} else {
 		var errorBody map[string]any
-		err = json.Unmarshal(bodyBytes, &errorBody)
+		err = json.NewDecoder(response.Body).Decode(&errorBody)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode error: %w", err)
 		}
 		if msg, ok := errorBody["message"].(string); ok {
 			return nil, errors.New(msg)
 		}
-		return nil, fmt.Errorf("internal error")
+		return nil, errors.New("failed to find message in error")
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	_ "github.com/lib/pq"
@@ -46,16 +45,13 @@ func (t *postgresDatabase) Exec(query string, args ...any) error {
 }
 
 func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, error) {
-	log.Println("query")
 	rows, err := t.connection.Query(query, args...)
 	if err != nil {
-		log.Println("failed to query data: %w", err)
 		return nil, fmt.Errorf("failed to query data: %w", err)
 	}
 	defer rows.Close()
 	columnTypes, err := rows.ColumnTypes()
 	if err != nil {
-		log.Println("failed to get column types: %w", err)
 		return nil, fmt.Errorf("failed to get column types: %w", err)
 	}
 	result := []map[string]any{}
@@ -68,7 +64,6 @@ func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, e
 			valuePtrs[i] = &values[i]
 		}
 		if err := rows.Scan(valuePtrs...); err != nil {
-			fmt.Println("failed to scan row: %w", err)
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 		for i, col := range columnTypes {
@@ -76,7 +71,6 @@ func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, e
 			case "NAME":
 				bytesVal, ok := values[i].([]byte)
 				if !ok {
-					log.Println("failed to assert val to bytes")
 					return nil, errors.New("failed to assert value to bytes")
 				}
 				row[col.Name()] = string(bytesVal)
@@ -88,7 +82,6 @@ func (t *postgresDatabase) Query(query string, args ...any) ([]map[string]any, e
 		result = append(result, row)
 	}
 	if err := rows.Err(); err != nil {
-		fmt.Println("failed to iterate over rows: %w", err)
 		return nil, fmt.Errorf("failed to iterate over rows: %w", err)
 	}
 	return result, nil

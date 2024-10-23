@@ -10,7 +10,7 @@ import (
 func decodePayload(r *http.Request) (string, []any, error) {
 	var payload map[string]any
 	err := json.NewDecoder(r.Body).Decode(&payload)
-	defer r.Body.Close()
+
 	if err != nil {
 		return "", nil, fmt.Errorf("invalid json format")
 	}
@@ -34,25 +34,28 @@ func QueryHandler(env *env) *queryHandler {
 }
 
 func (t *queryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	query, args, err := decodePayload(r)
 	if err != nil {
-		fmt.Println(err)
 		ErrorHandler("bad request", err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	result, err := t.env.database.Query(query, args...)
 	if err != nil {
-		fmt.Println(err)
 		ErrorHandler("bad request", "failed to query data: "+err.Error(), http.StatusBadRequest).ServeHTTP(w, r)
 		return
 	}
 	responseBody, err := json.Marshal(result)
 	if err != nil {
-		fmt.Println(err)
-		ErrorHandler("internal server error", "failed encoding response body", http.StatusInternalServerError).ServeHTTP(w, r)
+		ErrorHandler("server error", "failed encoding response body", http.StatusInternalServerError).ServeHTTP(w, r)
 		return
 	}
-	w.Write(responseBody)
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(responseBody)
+	if err != nil {
+		log.Println(err)
+	}
+
 }
 
 type execHandler struct {
@@ -75,6 +78,7 @@ func (t *execHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte{})
+
 }
 
 type errorHandler struct {
@@ -91,10 +95,12 @@ func (t *errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(t.Code)
 	log.Println(t.Error)
-	json.NewEncoder(w).Encode(map[string]any{
+	err := json.NewEncoder(w).Encode(map[string]any{
 		"error":   t.Error,
 		"message": t.Message,
 		"code":    t.Code},
 	)
-
+	if err != nil {
+		http.Error(w, "server error: failed to send error", http.StatusInternalServerError)
+	}
 }
