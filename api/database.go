@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -53,8 +54,11 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 	}
 	defer response.Body.Close()
 	fmt.Println(response.StatusCode)
-	var message []byte
-	response.Body.Read(message)
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("Failed to read response body: %v", err)
+	}
+	message := string(bodyBytes)
 	fmt.Println(message)
 	if response.StatusCode == http.StatusOK {
 		var responseBody []map[string]any
