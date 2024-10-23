@@ -62,14 +62,14 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 	fmt.Println(message)
 	if response.StatusCode == http.StatusOK {
 		var responseBody []map[string]any
-		err = json.NewDecoder(response.Body).Decode(&responseBody)
+		err = json.Unmarshal(bodyBytes, &responseBody)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode response body: %w", err)
 		}
 		return responseBody, nil
 	} else {
 		var errorBody map[string]any
-		err = json.NewDecoder(response.Body).Decode(&errorBody)
+		err = json.Unmarshal(bodyBytes, &errorBody)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode error: %w", err)
 		}
