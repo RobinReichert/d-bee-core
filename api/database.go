@@ -53,7 +53,9 @@ func (t *connection) Query(query string, args ...any) ([]map[string]any, error) 
 	}
 	defer response.Body.Close()
 	fmt.Println(response.StatusCode)
-	fmt.Println(response.Body)
+	var message []byte
+	response.Body.Read(message)
+	fmt.Println(message)
 	if response.StatusCode == http.StatusOK {
 		var responseBody []map[string]any
 		err = json.NewDecoder(response.Body).Decode(&responseBody)
